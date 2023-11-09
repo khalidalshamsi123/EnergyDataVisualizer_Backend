@@ -9,19 +9,26 @@ async def root():
 
 @app.get("/api/bar-chart")
 async def get_bar():
+    ## thermal_characteristics_after_ee_json = pl.read_csv(
+    ##    'Thermal_characteristics_afterEE.csv').to_dicts()
+    
+    ## thermal_characteristics_before_ee_json = pl.read_csv(
+    ##    'Thermal_characteristics_beforeEE.csv').to_dicts()
+    
+    ## bar_chart_json = {
+    ##    "thermal_characteristics_after_ee": thermal_characteristics_after_ee_json,
+    ##    "thermal_characteristics_before_ee": thermal_characteristics_before_ee_json
+    ## }
+
     thermal_characteristics_after_ee_json = pl.read_csv(
-        '../../Quantification of inherent flexibility from electrified residential heat sector in England and Wales/\
-        01 - Thermal_Characteristics/\
-        Thermal_characteristics_afterEE.csv').to_json()
+        'thermal_after_ee.csv').to_dicts()
     
     thermal_characteristics_before_ee_json = pl.read_csv(
-        '../../Quantification of inherent flexibility from electrified residential heat sector in England and Wales/\
-        01 - Thermal_Characteristics/\
-        Thermal_characteristics_beforeEE.csv').to_json()
+        'thermal_before_ee.csv').to_dicts()
     
     bar_chart_json = {
         "thermal_characteristics_after_ee": thermal_characteristics_after_ee_json,
         "thermal_characteristics_before_ee": thermal_characteristics_before_ee_json
     }
-    
+
     return bar_chart_json

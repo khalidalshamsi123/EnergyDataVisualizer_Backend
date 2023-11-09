@@ -1,0 +1,4 @@
+Index,LSOA_code,Local Authority,Region,Dwelling forms,Heating systems,Average thermal capacity kJ/K,Average thermal losses kW/K,Number of dwellings,Average annual heat demand kWh,Average floor area m2,Thermal capacity level,Outdoor air design temperature degreeC
+0,E01000001,City of London,London,flat,oil boiler,7743.573922593732,0.1906608717710736,12,8115.289346063978,77.43573922593733,low,-2
+1,E01000001,City of London,London,semi-detached,gas boiler,9757.884426391369,0.2625926618018416,2,11176.994056933589,97.57884426391368,low,-2
+2,E01000001,City of London,London,terraced,gas boiler,17584.164374999982,0.4363254135410395,1,18571.75490196081,175.84164374999983,low,-2
