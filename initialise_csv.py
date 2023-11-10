@@ -24,6 +24,6 @@ for file in csv_files:
         if batches is None:
             break
         concat_batch = pl.concat(batches)
-        ipc_batch = concat_batch.write_ipc_stream()
+        ipc_batch = concat_batch.write_ipc_stream(None)
         r.set(f"caches:dataframes:{file}:{batch_count}:original", ipc_batch)
         batch_count = batch_count + 1
