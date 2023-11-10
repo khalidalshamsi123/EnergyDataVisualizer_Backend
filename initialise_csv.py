@@ -1,20 +1,26 @@
 import glob
 
 # specify the directory
-directory = "/data"
+directory = "data"
 
 # get a list of all CSV files in the directory
 csv_files = glob.glob(directory + "/*.csv")
 
-import csv
 import polars as pl
+
 # from utils.redis_pool import get_redis
 
 # r = get_redis()
 
-# Efficiently reads csv file in chunks. Creating a dataframe per 100 rows.
-# This can be taken and stored into redis 'chunk' by 'chunk'.
-reader = pl.read_csv_batched("Thermal_characteristics_afterEE.csv", batch_size=100)
-batches = reader.next_batches(15)
-for df in batches:
-    print(df);
+# Calculate the number of rows in the csv file.
+# This is used to calculate the number of chunks.
+for file in csv_files:
+    # Create reader to read CSV in batches.
+    reader = pl.read_csv_batched(file, batch_size=100)
+    # Process 15 rows at a time.
+    while True:
+        batches = reader.next_batches(15)
+        if batches is None:
+            break
+        for df in batches:
+            print(df)
