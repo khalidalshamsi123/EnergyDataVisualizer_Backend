@@ -39,6 +39,9 @@ async def get_pie():
     ipc = await r.get('caches:dataframes:Energy_efficiency_improvements_costs_LA:original')
     data = pl.read_ipc_stream(ipc, columns=csv_column_names)
         
+    # We iterate over the column names, and select all columns that contain the name of a heating type.
+    # For each, returning a tuple containing the heating type and the DataFrame with the columns/data
+    # for that heating type.
     sorted_into_heating_types = [
         (
             column_name,
@@ -49,36 +52,27 @@ async def get_pie():
         for column_name in column_names
     ]
 
-    averages = [
-        (
-            tuple[0],
-            tuple[1].lazy()
-            .mean()
-            .collect()
-        )
-        for tuple in sorted_into_heating_types
-    ]
-
     final_averages = []
 
-    for object in averages:
-        column_names = object[1].columns
+    # Will iterate over tuple in sorted_into_heating_types. Tuple[0] is the name of the heating type.
+    # Tuple[1] is the DataFrame containing the data for that heating type.
+
+    # We iterate over the columns in the DataFrame, and then iterate over the numbers in each column.
+    # We add up all the numbers in the DataFrame and divide by the amount of numbers there are.
+
+    # This allows us to calculate the mean for each heating type.
+    for tuple in sorted_into_heating_types:
+        column_names = tuple[1].columns
         count = 0
         sum = 0
         for column_name in column_names:
-            for number in object[1][column_name]:
+            for number in tuple[1][column_name]:
                 sum = sum + number
                 count = count + 1
 
         # We divide the numbers we've tallied up so far by the amount
         # of data points there were relating to a particular heating type.
-        mini_mean = sum / count
-        final_mean = mini_mean / len(column_names)
-        final_averages.append([object[0], final_mean]) # Name of heating type. Oil, gas etc.
-
-    print(final_averages)
+        final_mean = sum / count
+        final_averages.append([tuple[0], final_mean]) # Name of heating type. Oil, gas etc. And the mean.
 
     return final_averages
-    # csv_file_path = "Energy_efficiency_improvements_costs_LA.csv"
-    # pie_chart_json = pl.read_csv(csv_file_path)
-    # #print(pie_chart_json)
