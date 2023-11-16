@@ -32,6 +32,13 @@ csv_column_names = [
     "Average energy efficiency improvements costs of terraced biomass boiler (GBP)"
 ]
 
+@app.get('/api/bob')
+async def get_test():
+    csv_file_path = "data/Energy_efficiency_improvements_costs_LA.csv"
+    pie_chart_json = pl.read_csv(csv_file_path).to_dicts()
+
+    return pie_chart_json
+
 @app.get("/api")
 async def get_pie():
     column_names = ["gas boiler", "oil boiler", "resistance heating", "biomass boiler"]
@@ -52,27 +59,46 @@ async def get_pie():
         for column_name in column_names
     ]
 
+    # We iterate over each tuple in sorted_into_heating_types.
+    # For each we create a new tuple in the array, defined with the following:
+    #  - The heating type name.
+    #  - A dataframe containing the count of rows in the sorted DataFrame.
+    #  - A dataframe containing the sum of all values for each column in the sorted DataFrame.
+    sorted_data = [
+        (
+            tuple[0],
+            tuple[1].lazy().select(pl.count())
+            .collect(),
+            tuple[1].lazy().sum()
+            .collect()
+        )
+        for tuple in sorted_into_heating_types
+    ]
+
     final_averages = []
 
-    # Will iterate over tuple in sorted_into_heating_types. Tuple[0] is the name of the heating type.
-    # Tuple[1] is the DataFrame containing the data for that heating type.
+    # We iterate over each tuple in sorted_data.
+    # for each we grab the column name, count of rows in the DataFrame, and a DataFrame
+    # containing the sum of all values in each column.
+    for tuple in sorted_data:
+        column_name = tuple[0]
+        sums = tuple[2][0]
+        count = tuple[1][0].item()
 
-    # We iterate over the columns in the DataFrame, and then iterate over the numbers in each column.
-    # We add up all the numbers in the DataFrame and divide by the amount of numbers there are.
+        # We iterate over each sum, adding it to the total sum.
+        total_sum = 0
+        for sum in sums:
+            total_sum = total_sum + sum.item()
 
-    # This allows us to calculate the mean for each heating type.
-    for tuple in sorted_into_heating_types:
-        column_names = tuple[1].columns
-        count = 0
-        sum = 0
-        for column_name in column_names:
-            for number in tuple[1][column_name]:
-                sum = sum + number
-                count = count + 1
+        # There are multiple columns per row related to a heating type.
+        # Meaning in order for us to properly generate the mean, we need
+        # to multiply the count by the amount of columns that are used.
 
-        # We divide the numbers we've tallied up so far by the amount
-        # of data points there were relating to a particular heating type.
-        final_mean = sum / count
-        final_averages.append([tuple[0], final_mean]) # Name of heating type. Oil, gas etc. And the mean.
+        # In this context, for this CSV, we know to multiply by 4.
+        mean = total_sum / (count * 4)
+
+        # We append the column name and mean to the final averages array.
+        # and move onto the next tuple to process.
+        final_averages.append([column_name, mean]) # Name of heating type. Oil, gas etc.
 
     return final_averages
