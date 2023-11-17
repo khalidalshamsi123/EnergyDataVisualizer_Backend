@@ -1,8 +1,5 @@
 from fastapi import FastAPI
 import polars as pl
-import csv
-import logging
-import json
 app = FastAPI()
 
 from utils.redis_pool import get_redis
@@ -32,7 +29,7 @@ csv_column_names = [
     "Average energy efficiency improvements costs of terraced biomass boiler (GBP)"
 ]
 
-@app.get("/api")
+@app.get("/api/piechart")
 async def get_pie():
     column_names = ["gas boiler", "oil boiler", "resistance heating", "biomass boiler"]
 
