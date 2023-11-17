@@ -1,14 +1,33 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from routes import maps
+
 import polars as pl
+
 app = FastAPI()
 
 from utils.redis_pool import get_redis
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(maps.router)
+
+# Test comment.
+
 r = get_redis()
+
 
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
+
 
 csv_column_names = [
     "Average energy efficiency improvements costs of detached gas boiler (GBP)",
@@ -29,13 +48,14 @@ csv_column_names = [
     "Average energy efficiency improvements costs of terraced biomass boiler (GBP)"
 ]
 
+
 @app.get("/api/piechart")
 async def get_pie():
     column_names = ["gas boiler", "oil boiler", "resistance heating", "biomass boiler"]
 
     ipc = await r.get('caches:dataframes:Energy_efficiency_improvements_costs_LA:original')
     data = pl.read_ipc_stream(ipc, columns=csv_column_names)
-        
+
     # We iterate over the column names, and select all columns that contain the name of a heating type.
     # For each, returning a tuple containing the heating type and the DataFrame with the columns/data
     # for that heating type.
@@ -43,8 +63,8 @@ async def get_pie():
         (
             column_name,
             data.lazy()
-                .select(pl.col(f"^.*({column_name}).*$"))
-                .collect()
+            .select(pl.col(f"^.*({column_name}).*$"))
+            .collect()
         )
         for column_name in column_names
     ]
@@ -70,6 +90,6 @@ async def get_pie():
         # We divide the numbers we've tallied up so far by the amount
         # of data points there were relating to a particular heating type.
         final_mean = sum / count
-        final_averages.append([tuple[0], final_mean]) # Name of heating type. Oil, gas etc. And the mean.
+        final_averages.append([tuple[0], final_mean])  # Name of heating type. Oil, gas etc. And the mean.
 
     return final_averages
