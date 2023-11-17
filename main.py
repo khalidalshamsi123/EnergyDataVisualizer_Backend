@@ -1,13 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routes import maps
+from routes import maps, tables
+from utils.redis_pool import get_redis
 
 import polars as pl
 
 app = FastAPI()
-
-from utils.redis_pool import get_redis
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,6 +17,7 @@ app.add_middleware(
 )
 
 app.include_router(maps.router)
+app.include_router(tables.router)
 
 # Test comment.
 
