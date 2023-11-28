@@ -1,5 +1,4 @@
-from fastapi import FastAPI
-import polars as pl
+
 
 app = FastAPI()
 
@@ -17,6 +16,84 @@ async def root():
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#Line Graph API reader
 @app.get("/api/line-graph")
 async def get_line_graph():
     #reading the csv file 'Half-Hourly-profiles-ofheating-technologies'
