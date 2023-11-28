@@ -1,45 +1,53 @@
-import os
+import asyncio
+import copy
+import json
+import pickle
 
 import polars as pl
-import pandas as pd
-import geopolars as gpl
-import geopandas as gpd
+from blake3 import blake3
 from fastapi import APIRouter, Response
 
+from utils.dataset_utils import get_lsoa_geojson, get_csv_frame
+from utils.redis_pool import get_redis
+
 router = APIRouter()
-
-dataset = os.getenv("DATA_DIR")
-
-paths = {
-    "ukerc_scotland_data": f"{dataset}/Residential heat demand in LSOAs in Scotland/ukerc_scotland_data.csv",
-}
 
 
 @router.get("/maps/{map_type}")
 async def read_map(map_type: str, fields: str):
-    # TODO: Remove this, there's a lot of scope for performance optimizations here
-    # return Response(open("/home/kavin/output.json", "rb").read(), media_type="application/json")
+    fields = set(fields.split(","))
 
-    if map_type not in paths:
-        return {"error": "Invalid map type"}
+    keys = copy.copy(fields)
+    keys.add(map_type)
+    keys = ''.join(sorted(keys))
 
-    fields = fields.split(",")
+    hasher = blake3()
+    hasher.update(keys.encode('utf-8'))
+    keys = hasher.hexdigest()[0:8]
+
+    cache_key = f"caches:geojson:maps:{keys}"
+
+    if await get_redis().exists(cache_key):
+        return Response(await get_redis().getex(cache_key, 120), media_type="application/json")
 
     print("Reading map type: " + map_type)
 
-    # Read the shapefile using GeoPandas
-    lsoa_gdf = gpd.read_file('infuse_lsoa_lyr_2011_simplified.shp')
-    # We need to do this to get GeoJSON coordinates
-    lsoa_gdf.to_crs(epsg=4326, inplace=True)
+    join_cache_key = f"caches:dataframes:geojoin:{map_type}"
 
-    # Read the CSV
-    df = pd.read_csv(paths[map_type], index_col=0)
+    if await get_redis().exists(join_cache_key):
+        gdf = pl.read_ipc_stream(await get_redis().get(join_cache_key))
+    else:
+        lsoa_geojson = await get_lsoa_geojson()
+        # Read the shapefile using GeoPandas
 
-    df.dropna(inplace=True)
+        # Read the CSV
+        df = await get_csv_frame(map_type)
 
-    merged_df = lsoa_gdf.merge(df, left_on="geo_code", right_on='LSOA11CD', how='right')
+        merged_df = lsoa_geojson.join(df, left_on="geo_code", right_on='LSOA11CD', how='inner')
 
-    gdf = merged_df
+        gdf = merged_df
+
+        asyncio.create_task(get_redis().set(join_cache_key, gdf.write_ipc_stream(None, compression="zstd").getvalue()))
 
     geojson = {
         "type": "FeatureCollection",
@@ -54,22 +62,13 @@ async def read_map(map_type: str, fields: str):
     })
 
     # Iterate through the rows and create the GeoJSON features
-    for _, row in gdf.iterrows():
+    for row in gdf.iter_rows(named=True):
         feature = {
             "type": "Feature",
             "properties": {},
-            # Convert the geometry to GeoJSON using the __geo_interface__ attribute
-            "geometry": row['geometry'].__geo_interface__
+            # Load the pickled GeoJSON
+            "geometry": pickle.loads(row['geometry'])
         }
-
-        def _tuple_round(coords):
-            if isinstance(coords[0], float):
-                return tuple([round(c, 4) for c in coords])
-            else:
-                return tuple([_tuple_round(c) for c in coords])
-
-        # Round off the coordinates to 4 decimal places
-        feature['geometry']['coordinates'] = _tuple_round(feature['geometry']['coordinates'])
 
         def _round(x):
             if isinstance(x, float):
@@ -86,5 +85,9 @@ async def read_map(map_type: str, fields: str):
         feature['properties'] = properties
         geojson['features'].append(feature)
 
+    geojson = json.dumps(geojson)
+
+    asyncio.create_task(get_redis().setex(cache_key, 60, geojson))
+
     # Return the GeoJSON
-    return geojson
+    return Response(geojson, media_type="application/json")
