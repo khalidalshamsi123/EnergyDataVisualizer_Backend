@@ -25,8 +25,8 @@ csv_column_names = [
     "Average energy efficiency improvements costs of terraced biomass boiler (GBP)"
 ]
 
-@router.get("/api/piechartjs")
-async def get_pie():
+@router.get("/api/Energy_efficiency_improvements_costs_LA")
+async def get_average_EE_improvement_costs_per_dwelling():
     column_names = ["detached", "semi-detached", "flat", "terraced"]
 
     ipc = await get_redis().get('caches:dataframes:Energy_efficiency_improvements_costs_LA:original')
