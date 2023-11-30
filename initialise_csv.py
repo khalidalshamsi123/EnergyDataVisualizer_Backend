@@ -33,9 +33,9 @@ async def initialise_csv():
         ipc = reader.write_ipc_stream(None, compression='zstd').getvalue()
         try:
             await r.set(f"caches:dataframes:{file_name}:original", ipc)
+            print(f"| Success |: Stored {file_name}'s contents in Redis.")
         except Exception as e:
             print(e)
-        print(f"| Success |: Stored {file_name}'s contents in Redis.")
 
     # Test reading from Redis. Works as intended.
     # data = await r.get("caches:dataframes:Thermal_characteristics_afterEE:original")
