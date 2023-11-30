@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routes import maps, tables, Energy_efficiency_improvements_costs_LA
+from routes import maps, tables, Energy_efficiency_improvements_costs_LA, Annual_heat_demand_LSOA
 from utils.redis_pool import get_redis
 
 import polars.selectors as cs
@@ -23,8 +23,7 @@ app.add_middleware(
 app.include_router(maps.router)
 app.include_router(tables.router)
 app.include_router(Energy_efficiency_improvements_costs_LA.router)
-
-# Test comment.
+app.include_router(Annual_heat_demand_LSOA.router)
 
 r = get_redis()
 
