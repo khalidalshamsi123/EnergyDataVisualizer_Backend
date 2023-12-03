@@ -102,7 +102,5 @@ async def get_requested_data_for_charts(options_object: list[Option_Object]):
             # Add the key alongside it's data to the overall datasets object.
             datasets[key] = data
 
-    print(datasets)
-
     # Return the datasets array.
     return datasets
