@@ -40,26 +40,32 @@ async def get_requested_data_for_charts(options_object: list[Option_Object]):
     dwelling_type_columns = ["detached", "flat", "semi-detached", "terraced"]
 
     datasets = {}
-    # Loop through the options object. Create a new object for each filter and rows containing the average and sum.
+    # Loop through the options object. Create a new object for each filter containing the average and sum.
     for object in options_object:
         if object.filter == "heating_type":
-            # Create a unique key based on the filter.
-            key = f'{object.filter}'
-            # Create a object containing the keys average and sum.
-            data = create_data_object()
-            data['average'] = await get_averages_for_columns_including_word_regex(heating_type_columns, csv_column_names, 'Energy_efficiency_improvements_costs_LA')
-            data['sum'] = await get_sum_for_columns_including_word_regex(heating_type_columns, csv_column_names, 'Energy_efficiency_improvements_costs_LA')
-            # Add the key alongside it's data to the overall datasets object.
-            datasets[key] = data
+            key_words = heating_type_columns
+            use_regex = True
         elif object.filter == "dwelling_type":
-            # Create a unique key based on the filter.
-            key = f'{object.filter}'
-            # Create a object containing the keys average and sum.
-            data = create_data_object()
-            data['average'] = await get_averages_for_columns_including_word(dwelling_type_columns, csv_column_names, 'Energy_efficiency_improvements_costs_LA')
-            data['sum'] = await get_sum_for_columns_including_word(dwelling_type_columns, csv_column_names, 'Energy_efficiency_improvements_costs_LA')
-            # Add the key alongside it's data to the overall datasets object.
-            datasets[key] = data
+            key_words = dwelling_type_columns
+            use_regex = False
+        
+        # Create a unique key based on the filter.
+        key = f'{object.filter}'
+        # Create a object containing the keys average and sum.
+        data = create_data_object()
+
+                # Create a object containing the keys average and sum.
+        data = create_data_object()
+        data['average'] = await (
+            (get_averages_for_columns_including_word_regex if use_regex else get_averages_for_columns_including_word) \
+                                    (key_words, csv_column_names, 'Energy_efficiency_improvements_costs_LA')
+                                    )
+        data['sum'] = await (
+            (get_sum_for_columns_including_word_regex if use_regex else get_sum_for_columns_including_word) \
+                                    (key_words, csv_column_names, 'Energy_efficiency_improvements_costs_LA')
+                                    )
+        # Add the key alongside it's data to the overall datasets object.
+        datasets[key] = data
 
     # Return the datasets array.
     return datasets

@@ -56,7 +56,8 @@ async def get_averages_for_columns_including_word(list_of_words, list_of_relevan
 
 # Returns a list of tuples. Each tuple contains a key word from the list of words provided, and the mean of the columns that contained that key word in the CSV specified.
 # This differs from the other method in that it uses regex to find the columns that contain the key words.
-# Though this method is more efficient, it's less accurate. As it will return ALL columns that contain the key word, even if it's apart of a larger word.
+# Though this method is more efficient, it's less accurate.
+# As it will return ALL columns that contain the key word, even if it's apart of a larger word.
 # E.g., If you are searching for 'detached' it will return columns that contain 'detached' and 'semi-detached'.
 async def get_averages_for_columns_including_word_regex(list_of_words, list_of_relevant_columns, csv_name):
     ipc = await get_redis().get(f'caches:dataframes:{csv_name}:original')

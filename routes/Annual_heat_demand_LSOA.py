@@ -65,42 +65,33 @@ async def get_requested_data_for_charts(options_object: list[Option_Object]):
     datasets = {}
     # Loop through the options object. Create a new object for each filter and rows containing the average and sum.
     for object in options_object:
-        if object.filter == "heating_type" and object.rows == "before":
-            # Create a unique key based on the filter and rows.
-            key = f'{object.filter}:{object.rows}'
-            # Create a object containing the keys average and sum.
-            data = create_data_object()
-            data['average'] = await get_averages_for_columns_including_word_regex(heating_type_columns, before_csv_column_names, 'Annual_heat_demand_LSOA')
-            data['sum'] = await get_sum_for_columns_including_word_regex(heating_type_columns, before_csv_column_names, 'Annual_heat_demand_LSOA')
-            # Add the key alongside it's data to the overall datasets object.
-            datasets[key] = data
-        elif object.filter == "heating_type" and object.rows == "after":
-            # Create a unique key based on the filter and rows.
-            key = f'{object.filter}:{object.rows}'
-            # Create a object containing the keys average and sum.
-            data = create_data_object()
-            data['average'] = await get_averages_for_columns_including_word_regex(heating_type_columns, after_csv_column_names, 'Annual_heat_demand_LSOA')
-            data['sum'] = await get_sum_for_columns_including_word_regex(heating_type_columns, after_csv_column_names, 'Annual_heat_demand_LSOA')
-            # Add the key alongside it's data to the overall datasets object.
-            datasets[key] = data
-        elif object.filter == "dwelling_type" and object.rows == "before":
-            # Create a unique key based on the filter and rows.
-            key = f'{object.filter}:{object.rows}'
-            # Create a object containing the keys average and sum.
-            data = create_data_object()
-            data['average'] = await get_averages_for_columns_including_word(dwelling_type_columns, before_csv_column_names, 'Annual_heat_demand_LSOA')
-            data['sum'] = await get_sum_for_columns_including_word(dwelling_type_columns, before_csv_column_names, 'Annual_heat_demand_LSOA')
-            # Add the key alongside it's data to the overall datasets object.
-            datasets[key] = data
-        elif object.filter == "dwelling_type" and object.rows == "after":
-            # Create a unique key based on the filter and rows.
-            key = f'{object.filter}:{object.rows}'
-            # Create a object containing the keys average and sum.
-            data = create_data_object()
-            data['average'] = await get_averages_for_columns_including_word(dwelling_type_columns, after_csv_column_names, 'Annual_heat_demand_LSOA')
-            data['sum'] = await get_sum_for_columns_including_word(dwelling_type_columns, after_csv_column_names, 'Annual_heat_demand_LSOA')
-            # Add the key alongside it's data to the overall datasets object.
-            datasets[key] = data
+        if object.filter == "heating_type":
+            key_words = heating_type_columns
+            use_regex = True
+        elif object.filter == "dwelling_type":
+            key_words = dwelling_type_columns
+            use_regex = False
+
+        if object.rows == "before":
+            columns_to_use = before_csv_column_names
+        elif object.rows == "after":
+            columns_to_use = after_csv_column_names
+
+        # Create a unique key based on the filter and rows.
+        key = f'{object.filter}:{object.rows}'
+        # Create a object containing the keys average and sum.
+        data = create_data_object()
+        data['average'] = await (
+            (get_averages_for_columns_including_word_regex if use_regex else get_averages_for_columns_including_word) \
+                                    (key_words, columns_to_use, 'Annual_heat_demand_LSOA')
+                                    )
+        data['sum'] = await (
+            (get_sum_for_columns_including_word_regex if use_regex else get_sum_for_columns_including_word) \
+                                    (key_words, columns_to_use, 'Annual_heat_demand_LSOA')
+                                    )
+
+        # Add the key alongside it's data to the overall datasets object.
+        datasets[key] = data
 
     # Return the datasets array.
     return datasets
