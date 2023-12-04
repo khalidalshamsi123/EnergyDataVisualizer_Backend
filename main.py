@@ -20,8 +20,6 @@ app.include_router(tables.router)
 app.include_router(Energy_efficiency_improvements_costs_LA.router)
 app.include_router(Annual_heat_demand_LSOA.router)
 
-# Test comment.
-
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
