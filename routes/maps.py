@@ -14,18 +14,14 @@ router = APIRouter()
 
 
 @router.get("/maps/{map_type}")
-async def read_map(map_type: str, fields: str):
-    fields = set(fields.split(","))
-
-    keys = copy.copy(fields)
-    keys.add(map_type)
-    keys = ''.join(sorted(keys))
-
+async def read_map(map_type: str, lsoa_field: str, sql: str):
     hasher = blake3()
-    hasher.update(keys.encode('utf-8'))
-    keys = hasher.hexdigest()[0:8]
+    hasher.update(map_type.encode('utf-8'))
+    hasher.update(lsoa_field.encode('utf-8'))
+    hasher.update(sql.encode('utf-8'))
+    key_hash = hasher.hexdigest()[0:8]
 
-    cache_key = f"caches:geojson:maps:{keys}"
+    cache_key = f"caches:geojson:maps:{key_hash}"
 
     if await get_redis().exists(cache_key):
         return Response(await get_redis().getex(cache_key, 120), media_type="application/json")
@@ -43,11 +39,21 @@ async def read_map(map_type: str, fields: str):
         # Read the CSV
         df = await get_csv_frame(map_type)
 
-        merged_df = lsoa_geojson.join(df, left_on="geo_code", right_on='LSOA11CD', how='inner')
+        merged_df = lsoa_geojson.join(df, left_on="geo_code", right_on=lsoa_field, how='inner')
 
         gdf = merged_df
 
         asyncio.create_task(get_redis().set(join_cache_key, gdf.write_ipc_stream(None, compression="zstd").getvalue()))
+
+    # Run the SQL query on the DataFrame
+    res = pl.SQLContext(frame=gdf).execute(sql)
+    gdf = res.collect()
+
+    # Get the fields after the SQL query
+    fields: list[str] = copy.deepcopy(gdf.columns)
+
+    # Remove the geometry field
+    fields.remove('geometry')
 
     geojson = {
         "type": "FeatureCollection",
