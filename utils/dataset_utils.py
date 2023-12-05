@@ -8,13 +8,13 @@ from utils.redis_pool import get_redis
 data = os.getenv("DATA_DIR")
 
 
-async def get_csv_frame(file_name: str):
+async def get_csv_frame(file_name: str, columns: list[str] = None):
     redis = get_redis()
 
     ipc = await redis.get(f"caches:dataframes:{file_name}:original")
 
     if ipc is not None:
-        return pl.read_ipc_stream(ipc)
+        return pl.read_ipc_stream(ipc, columns=columns)
 
     # recursively search for the file
     for root, dirs, files in os.walk(data):
@@ -23,6 +23,9 @@ async def get_csv_frame(file_name: str):
 
             ipc = df.write_ipc_stream(None, compression="zstd").getvalue()
             await redis.set(f"caches:dataframes:{file_name}:original", ipc)
+
+            if columns is not None:
+                df = pl.read_ipc_stream(ipc, columns=columns)
 
             return df
 
