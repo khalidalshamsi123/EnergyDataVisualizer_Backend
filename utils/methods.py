@@ -220,14 +220,13 @@ async def get_thermal_characteristics_csv_data():
         for heating_type in unique_heating_types
     ]
 
-    print(afterEE_Heating_Type_Means)
     # Get the max value out of all the averages in the list of tuples. This will be used for the y-axis scale.
     # The _ is a throwaway variable. We don't need the heating type here.
     afterEE_Data_Max = max([result.item() for _, result in afterEE_Heating_Type_Means])
 
-    # We create a list of json objects. We iterate through each unique heating type and mean value
+    # We create a list of tuples. We iterate through each unique heating type and mean value
     # within the afterEE_Heating_Type_Means list of tuples.
-    afterEE_Data = [{"heatingType": heating_type, "average": result.item()}
+    afterEE_Data = [(heating_type, result.item())
                for heating_type, result in afterEE_Heating_Type_Means]
 
     # Get the IPC stream of bytes from Redis using the relevant key.
@@ -254,16 +253,16 @@ async def get_thermal_characteristics_csv_data():
     # The _ is a throwaway variable. We don't need the heating type here.
     beforeEE_Data_Max = max([result.item() for _, result in beforeEE_Heating_Type_Means])
 
-    # We create a list of json objects. We iterate through each unique heating type and mean value
+    # We create a list of tuples. We iterate through each unique heating type and mean value
     # within the beforeEE_Heating_Type_Means list of tuples.
-    beforeEE_Data = [{"heatingType": heating_type, "average": result.item()}
+    beforeEE_Data = [(heating_type, result.item())
                for heating_type, result in beforeEE_Heating_Type_Means]
     
     max_value = afterEE_Data_Max if afterEE_Data_Max > beforeEE_Data_Max else beforeEE_Data_Max
 
     bar_chart_json = {
         "heating_types": unique_heating_types.to_list(),
-        "datasets": [ afterEE_Data, beforeEE_Data ],
+        "datasets": [ beforeEE_Data, afterEE_Data ],
         "max": max_value
     }
 
