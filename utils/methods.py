@@ -182,6 +182,65 @@ async def get_sum_for_columns_including_word_regex(list_of_words, list_of_releva
 
     return final_sums
 
+# Asynchronously retrieves a DataFrame from a Redis cache and calculates metrics based on specified criteria.
+# This method is designed to work with Arrow-format DataFrames.
+
+# Parameters:
+#   - list_of_words: List of words to search for in the specified word_column.
+#   - values_column: Column containing numerical values for metric calculation.
+#   - word_column: Column to search for the specified words.
+#   - columns_to_load: List of columns to load from the DataFrame.
+#   - metric: Metric to calculate for each word, options are "mean" or "sum."
+#   - csv_name: Name of the DataFrame stored in the Redis cache.
+
+# Returns:
+#   A list of tuples. Each tuple contains a word from the list_of_words and the calculated metric value
+#   (mean or sum) based on the values_column for rows where the word is found in the word_column.
+
+# Example Usage:
+#   list_of_words = ["detached", "flat"]
+#   columns_to_load = ["Dwelling forms", "Average annual heat demand kWh"]
+#   values_column = "Average annual heat demand kWh"
+#   word_column = "Dwelling forms"
+#   metric = "average"  # Options: "average" or "sum"
+#   csv_name = "Thermal_characteristics_beforeEE"
+#   result = await column_values_where_rows_include_word(list_of_words, values_column, word_column, columns_to_load, metric, csv_name)
+#   print(result)
+async def calculate_word_column_metrics(list_of_words, values_column, word_column, columns_to_load, metric, csv_name):
+    ipc = await get_redis().get(f'caches:dataframes:{csv_name}:original')
+    data = pl.read_ipc_stream(ipc, columns=columns_to_load)
+
+    # Search for the words in the list of words in the rows of the DataFrame.
+    # If the row contains the word, we return the value in the values_column.
+    # We then calculate the mean of these values.
+    # We return a list of tuples. Each tuple contains the word and the mean.
+
+    # However if metric = sum we return the sum of the values instead of the average/mean.
+    if metric == "average":
+        return [
+            (
+                word,
+                data.lazy()
+                .filter(pl.col(word_column) == word)
+                .select([pl.col(values_column)])
+                .mean()
+                .collect()[values_column].item()
+            )
+            for word in list_of_words
+        ]
+    elif metric == "sum":
+        return [
+            (
+                word,
+                data.lazy()
+                .filter(pl.col(word_column) == word)
+                .select([pl.col(values_column)])
+                .sum()
+                .collect()[values_column].item()
+            )
+            for word in list_of_words
+        ]
+        
 # Logic for getting values needed to visualise head demand before and after energy
 # efficiency improvements annually in the form of a bar-chart.
 async def get_thermal_characteristics_csv_data():
