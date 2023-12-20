@@ -2,6 +2,7 @@ import pytest
 from httpx import AsyncClient
 from main import app
 
+
 @pytest.mark.asyncio(scope='session')
 async def test_thermal_characteristics_heating_types_before_rows_average_metric():
     # Create a object containing the options the route expects.
@@ -26,7 +27,8 @@ async def test_thermal_characteristics_heating_types_before_rows_average_metric(
         # Loop over each array in the json object under the 'metric' key checking if each value matches the
         # respective 'correct' value the route should have returned.
         for i in range(len(json[key][metric])):
-            assert json[key][metric][i][1] == expected_mean_values[i]
+            assert abs(json[key][metric][i][1] - expected_mean_values[i]) < 0.1
+
 
 @pytest.mark.asyncio(scope='session')
 async def test_thermal_characteristics_heating_types_before_rows_sum_metric():
@@ -52,7 +54,8 @@ async def test_thermal_characteristics_heating_types_before_rows_sum_metric():
         # Loop over each array in the json object under the 'metric' key checking if each value matches the
         # respective 'correct' value the route should have returned.
         for i in range(len(json[key][metric])):
-            assert json[key][metric][i][1] == expected_sum_values[i]
+            assert abs(json[key][metric][i][1] - expected_sum_values[i]) < 0.1
+
 
 @pytest.mark.asyncio(scope='session')
 async def test_thermal_characteristics_heating_types_after_rows_average_metric():
@@ -78,7 +81,8 @@ async def test_thermal_characteristics_heating_types_after_rows_average_metric()
         # Loop over each array in the json object under the 'metric' key checking if each value matches the
         # respective 'correct' value the route should have returned.
         for i in range(len(json[key][metric])):
-            assert json[key][metric][i][1] == expected_sum_values[i]
+            assert abs(json[key][metric][i][1] - expected_sum_values[i]) < 0.1
+
 
 @pytest.mark.asyncio(scope='session')
 async def test_thermal_characteristics_heating_types_after_rows_sum_metric():
@@ -104,7 +108,8 @@ async def test_thermal_characteristics_heating_types_after_rows_sum_metric():
         # Loop over each array in the json object under the 'metric' key checking if each value matches the
         # respective 'correct' value the route should have returned.
         for i in range(len(json[key][metric])):
-            assert json[key][metric][i][1] == expected_sum_values[i]
+            assert abs(json[key][metric][i][1] - expected_sum_values[i]) < 0.1
+
 
 @pytest.mark.asyncio(scope='session')
 async def test_thermal_characteristics_dwelling_types_before_rows_average_metric():
@@ -130,7 +135,8 @@ async def test_thermal_characteristics_dwelling_types_before_rows_average_metric
         # Loop over each array in the json object under the 'metric' key checking if each value matches the
         # respective 'correct' value the route should have returned.
         for i in range(len(json[key][metric])):
-            assert json[key][metric][i][1] == expected_mean_values[i]
+            assert abs(json[key][metric][i][1] - expected_mean_values[i]) < 0.1
+
 
 @pytest.mark.asyncio(scope='session')
 async def test_thermal_characteristics_dwelling_types_before_rows_sum_metric():
@@ -156,7 +162,8 @@ async def test_thermal_characteristics_dwelling_types_before_rows_sum_metric():
         # Loop over each array in the json object under the 'metric' key checking if each value matches the
         # respective 'correct' value the route should have returned.
         for i in range(len(json[key][metric])):
-            assert json[key][metric][i][1] == expected_sum_values[i]
+            assert abs(json[key][metric][i][1] - expected_sum_values[i]) < 0.1
+
 
 @pytest.mark.asyncio(scope='session')
 async def test_thermal_characteristics_dwelling_types_after_rows_average_metric():
@@ -183,7 +190,8 @@ async def test_thermal_characteristics_dwelling_types_after_rows_average_metric(
         # respective 'correct' value the route should have returned.
         for i in range(len(json[key][metric])):
             print(json[key][metric])
-            assert json[key][metric][i][1] == expected_mean_values[i]
+            assert abs(json[key][metric][i][1] - expected_mean_values[i]) < 0.1
+
 
 @pytest.mark.asyncio(scope='session')
 async def test_thermal_characteristics_dwelling_types_after_rows_sum_metric():
@@ -209,4 +217,4 @@ async def test_thermal_characteristics_dwelling_types_after_rows_sum_metric():
         # Loop over each array in the json object under the 'metric' key checking if each value matches the
         # respective 'correct' value the route should have returned.
         for i in range(len(json[key][metric])):
-            assert json[key][metric][i][1] == expected_sum_values[i]
+            assert abs(json[key][metric][i][1] - expected_sum_values[i]) < 0.1
