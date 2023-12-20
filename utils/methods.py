@@ -210,36 +210,28 @@ async def calculate_word_column_metrics(list_of_words, values_column, word_colum
     ipc = await get_redis().get(f'caches:dataframes:{csv_name}:original')
     data = pl.read_ipc_stream(ipc, columns=columns_to_load)
 
-    # Search for the words in the list of words in the rows of the DataFrame.
-    # If the row contains the word, we return the value in the values_column.
-    # We then calculate the mean of these values.
-    # We return a list of tuples. Each tuple contains the word and the mean.
+    results = []
 
-    # However if metric = sum we return the sum of the values instead of the average/mean.
-    if metric == "average":
-        return [
-            (
-                word,
-                data.lazy()
-                .filter(pl.col(word_column) == word)
-                .select([pl.col(values_column)])
-                .mean()
-                .collect()[values_column].item()
-            )
-            for word in list_of_words
-        ]
-    elif metric == "sum":
-        return [
-            (
-                word,
-                data.lazy()
-                .filter(pl.col(word_column) == word)
-                .select([pl.col(values_column)])
-                .sum()
-                .collect()[values_column].item()
-            )
-            for word in list_of_words
-        ]
+    for word in list_of_words:
+        if metric == "average":
+            result = await data.lazy() \
+                .filter(pl.col(word_column) == word) \
+                .select([pl.col(values_column)]) \
+                .mean() \
+                .collect_async()
+        elif metric == "sum":
+            result = await data.lazy() \
+                .filter(pl.col(word_column) == word) \
+                .select([pl.col(values_column)]) \
+                .sum() \
+                .collect_async()
+
+        # Extract the value for the specified column from the result
+        value = result[values_column].item()
+        results.append((word, value))
+
+    return results
+
         
 # Logic for getting values needed to visualise head demand before and after energy
 # efficiency improvements annually in the form of a bar-chart.
